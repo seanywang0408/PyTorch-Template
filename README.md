@@ -1,6 +1,6 @@
 # Template
 
-A template for develop a project in PyTorch. All the concern is about running code with lowest probability of making mistakes. 
+A template in PyTorch for developing a *machine learning / deep learning /computer vision* project. All the concerns are about running code with lowest probability of making mistakes. 
 
 ## Concerns
 
