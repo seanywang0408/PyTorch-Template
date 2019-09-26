@@ -1,6 +1,22 @@
 # Template
 
-A template in PyTorch for developing a *machine learning / deep learning /computer vision* project. All the concerns are about running code with lowest probability of making mistakes. 
+## Introduction
+
+A template in PyTorch for developing a *machine learning / deep learning /computer vision* project. All the concerns are about running code with lowest probability of making mistakes. You don't have to follow my methods, but every programmer indeed should be aware of how mistakes could happen and hence take some precautions accordingly. And my concerns might inspire you a little.
+
+## Set Up
+
+Run
+
+```
+pip install -r requiremtns.txt
+```
+
+If you the cuda version on your machine is 9.0 or below, which can't install torch 1.0 or torch 1.2, then run:
+
+```
+pip install -r requiremtns-old.txt
+```
 
 ## Concerns
 
@@ -28,4 +44,12 @@ This folder stores common functions / classes that could be used generally acros
 You can add other common functions / classes in this folder based on particular tasks. For example, for 3D voxel tasks, there could be a `voxel transform.py`
 
 ### `scripts`
+
+This is where the main scripts are stored. All the code entrance shall be in this folder, including jupyter notebook files and python files. 
+
+* `_init_path.py` is the first package to import in each scripts, which would add other folders' path into os path. 
+* In `explore.ipynb`, common packages including matplotlib, pytorch, etc, would be imported
+* Two script templates, respectively for classification and segmentation are presented. There have been codes for 1) saving model checkpoins, 2) dataparallel among multi-GPUS, 3) logs in text file and tensorboard, 4)copying backup code to review, 5) visiualization for segmentation, 5) setting random seeds, and soon. Also common steps in PyTorch have been done. All you need is to custom your own model, your own Dataset (according to your data), and maybe your loss as well.
+
+
 
