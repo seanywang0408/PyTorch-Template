@@ -11,13 +11,13 @@ The intent of the project is to allow people who is about to develop a ML projec
 Run
 
 ```
-pip install -r requiremtns.txt
+pip install -r requirements.txt
 ```
 
 If you the cuda version on your machine is 9.0 or below, which can't install torch 1.0 or torch 1.2, then run:
 
 ```
-pip install -r requiremtns-old.txt
+pip install -r requirements-old.txt
 ```
 
 ## Concerns
