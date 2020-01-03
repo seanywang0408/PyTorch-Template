@@ -17,11 +17,6 @@ def dice_loss_perclass(probs, targets, smooth=1.):
 
     return 1 - 2. * (intersection.sum()+smooth) / (probs.sum()+targets.sum()+smooth)
 
-
-
-
-
-
 def soft_cross_entropy_loss(pred_logit, target):
     log_pred = F.log_softmax(pred_logit, dim=-1)
     loss = -(log_pred * target).mean()

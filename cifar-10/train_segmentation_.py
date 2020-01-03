@@ -34,7 +34,7 @@ from mylib.loss import soft_dice_loss
 
 # from models.LIDC.fcn_resnet import FCNResNet18
 # from models.LIDC.unet import UNet
-# from models.resnet import ResNet
+
 
 def main(save_path=cfg.save, 
          n_epochs=cfg.n_epochs, 
@@ -48,13 +48,14 @@ def main(save_path=cfg.save,
     copy_file_backup(save_path)
 
     # Datasets
-    train_set = datasets
+    train_set = LIDCDataset(crop_size=48, move=5, data_path=env.data, train=True)
     valid_set = None
-    test_set = datasets
+    test_set = LIDCDataset(crop_size=48, move=5, data_path=env.data, train=False)
 
     # # Models
 
-    model = torchvision.models.resnet18(pretrained=True, num_classes=6)
+    model = FCNResNet18(pretrained=cfg.pretrained, num_classes=2)
+    # model = UNet(num_classes=2)
 
     torch.save(model.state_dict(), os.path.join(save_path, 'model.dat'))
     # Train the model
@@ -92,7 +93,7 @@ def train(model, train_set, test_set, save, valid_set, n_epochs):
                                                      gamma=cfg.gamma)
 
     # Start log
-    logs = ['loss', 'acc']
+    logs = ['loss', 'iou', 'dice', 'iou0', 'iou1', 'dice0', 'dice1']
     train_logs = ['train_'+log for log in logs]
     test_logs = ['test_'+log for log in logs]
 
@@ -157,25 +158,31 @@ def train_epoch(model, loader, optimizer, epoch, n_epochs, print_freq=1, writer=
     end = time.time()
     for batch_idx, (x, y) in enumerate(loader):
         # Create vaiables
-        x = to_var(x)
-        y = to_var(y)
+        x = to_device(x)
+        y = to_device(y)
 
         # compute output
-        probs = model(x).softmax(-1)
+        pred_logit = model(x)
+        y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
-        loss = F.cross_entropy(probs, y)
+        loss = soft_dice_loss(pred_logit, y_one_hot)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         # measure accuracy and record loss
-        acc = (y == probs.argmax(0).view(y.shape)).sum().float() / y.shape[0]
-        logs = [loss.item(), acc.item()]+ \
+        iou = cal_iou(pred_logit, y_one_hot)
+        dice = cal_dice(pred_logit, y_one_hot)
+
+        logs = [loss.item(), iou[1:].mean(), dice[1:].mean()]+ \
+                            [iou[i].item() for i in range(len(iou))]+ \
+                            [dice[i].item() for i in range(len(dice))]+ \
                             [time.time() - end]
         meters.update(logs, y.size(0))   
 
         # measure elapsed time
         end = time.time()
+
 
         # print stats
         print_freq = 2 // meters.val[-1] + 1
@@ -185,10 +192,14 @@ def train_epoch(model, loader, optimizer, epoch, n_epochs, print_freq=1, writer=
                 'Iter: [%d/%d]' % (batch_idx + 1, len(loader)),
                 'Time %.3f (%.3f)' % (meters.val[-1], meters.avg[-1]),
                 'Loss %.4f (%.4f)' % (meters.val[0], meters.avg[0]),
-                'ACC %.4f (%.4f)' % (meters.val[1], meters.avg[1]),
+                'IOU %.4f (%.4f)' % (meters.val[1], meters.avg[1]),
+                'DICE %.4f (%.4f)' % (meters.val[2], meters.avg[2]),
             ])
             print(res)
-
+    pred_one_hot = categorical_to_one_hot(pred_logit.argmax(dim=1), dim=1, expand_dim=True)
+    plot_multi_voxels(pred_one_hot[0], y_one_hot[0])
+    plt.savefig(os.path.join(cfg.save,'epoch_{}'.format(epoch),'train_{}.pdf'.format(epoch)))
+    plt.close()
     return meters.avg[:-1]
 
 
@@ -201,16 +212,21 @@ def test_epoch(model, loader, epoch, print_freq=1, is_test=True, writer=None):
     with torch.no_grad():
         for batch_idx, (x, y) in enumerate(loader):
             # Create vaiables
-            x = to_var(x)
-            y = to_var(y)
+            x = to_device(x)
+            y = to_device(y)
             # compute output
-            probs = model(x).softmax(-1)
-            loss = F.cross_entropy(probs, y)
-            # measure accuracy and record loss
-            acc = (y == probs.argmax(0).view(y.shape)).sum().float() / y.shape[0]
+            pred_logit = model(x)
+            y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
-            logs = [loss.item(), acc.item()]+ \
-                            [time.time() - end]
+            loss = soft_dice_loss(pred_logit, y_one_hot)
+            # measure accuracy and record loss
+            iou = cal_iou(pred_logit, y_one_hot)
+            dice = cal_dice(pred_logit, y_one_hot)
+
+            logs = [loss.item(), iou[1:].mean(), dice[1:].mean()]+ \
+                                [iou[i].item() for i in range(len(iou))]+ \
+                                [dice[i].item() for i in range(len(dice))]+ \
+                                [time.time() - end]
             meters.update(logs, y.size(0))   
 
             # measure elapsed time
@@ -228,7 +244,10 @@ def test_epoch(model, loader, epoch, print_freq=1, is_test=True, writer=None):
                     'DICE %.4f (%.4f)' % (meters.val[2], meters.avg[2]),
                 ])
                 print(res)
-
+    pred_one_hot = categorical_to_one_hot(pred_logit.argmax(dim=1), dim=1, expand_dim=True)
+    plot_multi_voxels(pred_one_hot[0], y_one_hot[0])
+    plt.savefig(os.path.join(cfg.save,'epoch_{}'.format(epoch),'test_{}.pdf'.format(epoch)))
+    plt.close()
     return meters.avg[:-1]
 
 if __name__ == '__main__':

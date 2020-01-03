@@ -1,8 +1,8 @@
 # my settings
-tmp/
-ChestX-ray14/
-sftp-config.json
 env.py
+tmp/
+data/
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
