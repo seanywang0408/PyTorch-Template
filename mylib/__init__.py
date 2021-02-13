@@ -88,9 +88,12 @@ def backup_code(save_path=None, ignored_in_current_folder=None, marked_in_parent
                 print('{} is a special file(socket, FIFO, device file) that would not be backup.'.format(file_path))
 
     # copy folders in parent folder
+    os.makedirs(os.path.join(backup_code_dir, 'parent_folder_files'))
     for file_path in os.listdir('../'):
-        if file_path in marked_in_parent_folder:
+        if os.path.isdir(file_path) and file_path in marked_in_parent_folder:
             shutil.copytree(os.path.join(sys.path[0], '../', file_path), os.path.join(backup_code_dir, file_path))
+        elif os.path.isfile(file_path):
+            shutil.copy(os.path.join(sys.path[0], '../', file_path), os.path.join(backup_code_dir, 'parent_folder_files'))
 
 # logging functions
 class SingleAverageMeter(object):
