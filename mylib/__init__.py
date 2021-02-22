@@ -90,9 +90,10 @@ def backup_code(save_path=None, ignored_in_current_folder=None, marked_in_parent
     # copy folders in parent folder
     os.makedirs(os.path.join(backup_code_dir, 'parent_folder_files'))
     for file_path in os.listdir('../'):
-        if os.path.isdir(file_path) and file_path in marked_in_parent_folder:
+        if os.path.isdir(os.path.join(sys.path[0], '../', file_path)) and file_path in marked_in_parent_folder:
             shutil.copytree(os.path.join(sys.path[0], '../', file_path), os.path.join(backup_code_dir, file_path))
-        elif os.path.isfile(file_path):
+        elif os.path.isfile(os.path.join(sys.path[0], '../', file_path)):
+            # print(os.path.join(sys.path[0], '../', file_path), os.path.join(backup_code_dir, 'parent_folder_files'))
             shutil.copy(os.path.join(sys.path[0], '../', file_path), os.path.join(backup_code_dir, 'parent_folder_files'))
 
 # logging functions
